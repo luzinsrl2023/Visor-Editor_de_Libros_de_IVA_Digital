@@ -135,6 +135,9 @@
 
         /* Progress bar */
         #progressBar { height: 6px; background: linear-gradient(90deg,#06b6d4,#22d3ee); width: 0%; border-radius: 6px; transition: width 300ms ease; }
+        /* Overlay de diagnóstico (pequeño) */
+        #diagOverlay { position: fixed; left: 12px; bottom: 12px; z-index: 2500; background: rgba(0,0,0,0.45); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; backdrop-filter: blur(6px); }
+        body.light #diagOverlay { background: rgba(255,255,255,0.92); color: #0f172a; }
     </style>
 </head>
 <body>
@@ -224,6 +227,7 @@
             <button class="btn btn-primary floating-btn" id="fabAnalyze" title="Analizar (Ctrl+Enter)"><i class="bi bi-bar-chart"></i></button>
             <button class="btn btn-light floating-btn" id="fabTheme" title="Cambiar tema"><i class="bi bi-circle-half"></i></button>
         </div>
+        <div id="diagOverlay" aria-hidden="true">Tema detectado: <span id="diagTheme">n/a</span></div>
         <!-- Modal Editor de Diseño -->
         <div class="modal fade" id="layoutEditorModal" tabindex="-1">
             <div class="modal-dialog modal-lg">

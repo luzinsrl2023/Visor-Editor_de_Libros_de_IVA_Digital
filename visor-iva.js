@@ -126,6 +126,9 @@
 			document.documentElement.classList.remove('light');
 			document.body.classList.remove('light');
 		}
+		// actualizar overlay diagnóstico
+		const diag = document.getElementById('diagTheme');
+		if(diag) diag.textContent = val;
 	}
 	function applyCompactMode(){
 		const el = els.compactToggle;
@@ -272,7 +275,11 @@
 	}
 
 	function setupTableEventListeners(){
-		document.querySelectorAll('td[contenteditable="true"]').forEach(cell=> cell.addEventListener('blur', function(){ const originalIndex = parseInt(this.closest('tr').dataset.originalIndex); const field = this.dataset.field; let value = this.textContent.trim(); const record = state.dataWithErrors.find(d=> d.originalIndex === originalIndex); if(!record) return; if(field === 'montoTotal') value = parseFloat(value) || 0; record[field] = value; }));
+		document.querySelectorAll('td[contenteditable="true"]').forEach(cell=> cell.addEventListener('blur', function(){ const originalIndex = parseInt(this.closest('tr').dataset.originalIndex); const field = this.dataset.field; let value = this.textContent.trim(); const record = state.dataWithErrors.find(d=> d.originalIndex === originalIndex); if(!record) return; if(field === 'montoTotal'){ const v = parseFloat(value); if(isNaN(v)){ this.classList.add('text-danger'); showToast('Monto inválido', 'error'); return; } value = v; } if(field === 'nroIDCliente' || field === 'cuitProveedor'){ if(value && value.length>=11 && !validateCuit(value)){ this.classList.add('text-danger'); showToast('CUIT inválido', 'error'); return; } } if(field === 'fecha'){ if(value && !validateDate(value)){ this.classList.add('text-danger'); showToast('Fecha inválida (AAAAMMDD)', 'error'); return; } } // aplicar
+			this.classList.remove('text-danger');
+			record[field] = value;
+			pushHistory();
+		}));
 		document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', handleRowSelection));
 		document.querySelectorAll('.sortable').forEach(h=> h.addEventListener('click', ()=> sortTable(h.dataset.field)));
 	}
@@ -340,6 +347,57 @@
 	// -----------------------------
 	function setupKeyboardShortcuts(){ window.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.key === 'Enter'){ e.preventDefault(); analyzeFiles(); } if((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 't'){ e.preventDefault(); els.themeSelect.value = els.themeSelect.value === 'light' ? 'dark' : 'light'; applyTheme(); } }); }
 
+	// cargar JSZip dinámicamente si no está presente
+	async function ensureJSZip(){ if(window.JSZip) return window.JSZip; return new Promise((resolve,reject)=>{ const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload = ()=> resolve(window.JSZip); s.onerror = ()=> reject(new Error('No se pudo cargar JSZip')); document.head.appendChild(s); }); }
+
+	// Generar ZIP con archivos corregidos
+	async function zipCorrectedFiles(){
+		if(!state.cbteRawData.length){ showToast('No hay datos para comprimir','error'); return; }
+		try{
+			await ensureJSZip();
+			if(!window.JSZip){ showToast('JSZip no está disponible', 'error'); return; }
+			const zip = new window.JSZip();
+			const tipoOp = document.getElementById('tipoOperacion').value;
+			const cbteLayoutKey = tipoOp === 'ventas' ? 'CBTE_VENTAS' : 'CBTE_COMPRAS';
+			const cbteLayout = FILE_LAYOUTS[cbteLayoutKey];
+
+			const correctedLines = state.cbteRawData.map((originalLine, index)=>{
+				const correctedData = state.dataWithErrors.find(d=> d.originalIndex === index);
+				if(!correctedData) return originalLine;
+				let newLine = ' '.repeat(200);
+				cbteLayout.forEach(field=>{
+					let value = correctedData[field.name];
+					if(value === undefined){
+						const altField = field.name === 'nroIDCliente' ? 'cuitProveedor' : (field.name === 'cuitProveedor' ? 'nroIDCliente' : null);
+						if(altField) value = correctedData[altField];
+					}
+					if(value === undefined){
+						const altNameField = field.name === 'nombreCliente' ? 'nombreProveedor' : (field.name === 'nombreProveedor' ? 'nombreCliente' : null);
+						if(altNameField) value = correctedData[altNameField];
+					}
+					if(value === undefined) value = '';
+					if(field.type === 'float'){
+						value = Math.round(value * 100).toString().padStart(field.len, '0');
+					} else {
+						value = value.toString();
+						if(field.trim) value = value.padEnd(field.len, ' ');
+						else value = value.padStart(field.len, '0');
+					}
+					value = value.substring(0, field.len);
+					newLine = newLine.substring(0, field.start) + value + newLine.substring(field.start + value.length);
+				});
+				return newLine.substring(0, originalLine.length);
+			});
+
+			const correctedContent = correctedLines.join('\r\n');
+			zip.file(state.cbteFile.name.replace('.txt','_CORREGIDO.txt'), correctedContent);
+			const blob = await zip.generateAsync({ type: 'blob' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a'); a.href = url; a.download = `corregidos_${new Date().toISOString().slice(0,10)}.zip`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+			showToast('ZIP descargado','success');
+		}catch(err){ showToast('Error al generar ZIP: '+err.message, 'error'); }
+	}
+
 	// -----------------------------
 	// Inicialización
 	// -----------------------------
@@ -363,7 +421,9 @@
 			if(sel.value === 'light') sel.value = 'dark';
 			else if(sel.value === 'dark') sel.value = 'system';
 			else sel.value = 'light';
-			applyTheme();
+		applyTheme();
+		// actualizar diag overlay
+		const diag = document.getElementById('diagTheme'); if(diag){ const t = localStorage.getItem('themeChoice') || 'system'; diag.textContent = t; }
 		});
 
 		setupHistoryBindings();
