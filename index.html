@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor IVA Digital 2.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(120deg, #06b6d4 0%, #111827 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        .main-card {
+            background: rgba(31,41,55,0.85);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(6,182,212,0.25);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .file-drop {
+            border: 2px dashed #06b6d4;
+            border-radius: 1rem;
+            background: rgba(17,24,39,0.7);
+            padding: 2rem;
+            text-align: center;
+            transition: border-color 0.2s;
+            cursor: pointer;
+        }
+        .file-drop:hover {
+            border-color: #22d3ee;
+            background: rgba(6,182,212,0.08);
+        }
+        .file-status span {
+            margin-right: 1.5rem;
+            font-size: 1rem;
+        }
+        .btn-lg {
+            font-size: 1.1rem;
+            padding: 0.8rem 2rem;
+            border-radius: 0.75rem;
+        }
+        .stats {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        .stat {
+            background: #1f2937;
+            border-radius: 1rem;
+            padding: 1.2rem 2rem;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .stat-label {
+            color: #9ca3af;
+        }
+        .alert {
+            margin-top: 1rem;
+        }
+        .table-responsive {
+            margin-top: 2rem;
+        }
+        .modal-content {
+            background: #1f2937;
+            color: #fff;
+        }
+        .form-label {
+            font-weight: 600;
+        }
+        .form-select, .form-control {
+            background: #111827;
+            color: #fff;
+            border: 1px solid #06b6d4;
+        }
+        .form-select:focus, .form-control:focus {
+            border-color: #22d3ee;
+            box-shadow: 0 0 0 0.2rem rgba(6,182,212,0.25);
+        }
+        .bi {
+            font-size: 1.3rem;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mt-5 mb-4">
+            <h1 class="header-title">Visor IVA Digital 2.0</h1>
+            <p class="lead text-secondary">Analiza, compara, edita y corrige tus archivos de IVA Digital (ex CITI) antes de presentarlos a AFIP. <br> Interfaz mejorada, intuitiva y rápida.</p>
+        </header>
+        <div class="main-card mx-auto" style="max-width: 900px;">
+            <form class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <label for="encoding" class="form-label">Codificación de Archivos</label>
+                    <select id="encoding" class="form-select">
+                        <option value="windows-1252" selected>Windows-1252 / ANSI</option>
+                        <option value="UTF-8">UTF-8</option>
+                        <option value="ISO-8859-1">ISO-8859-1 / Latin1</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="tolerancia" class="form-label">Tolerancia de Diferencia</label>
+                    <select id="tolerancia" class="form-select">
+                        <option value="0.015" selected>$0.015 (Recomendado)</option>
+                        <option value="0.05">$0.05 (Flexible)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="tipoOperacion" class="form-label">Tipo de Operación</label>
+                    <select id="tipoOperacion" class="form-select">
+                        <option value="ventas" selected>Ventas</option>
+                        <option value="compras">Compras</option>
+                    </select>
+                </div>
+            </form>
+            <div class="mb-4">
+                <label class="form-label">Zona de Carga</label>
+                <div class="file-drop" id="dropArea">
+                    <input type="file" id="fileInput" multiple accept=".txt" style="display:none;">
+                    <p class="mb-2"><i class="bi bi-upload"></i> Arrastra y suelta tus archivos <b>_CBTE_</b> y <b>_ALICUOTAS_</b> aquí, o haz clic para seleccionarlos.</p>
+                    <div class="file-status">
+                        <span id="cbteStatus" class="text-danger">Comprobantes: No cargado</span>
+                        <span id="alicuotasStatus" class="text-danger">Alícuotas: No cargado</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
+                <button type="button" class="btn btn-lg btn-primary" id="compareBtn"><i class="bi bi-bar-chart"></i> Analizar Archivos</button>
+                <button type="button" class="btn btn-lg btn-outline-info" id="validateSingleBtn"><i class="bi bi-search"></i> Validar Archivo Individual</button>
+                <button type="button" class="btn btn-lg btn-outline-secondary" id="layoutEditorBtn"><i class="bi bi-gear"></i> Editor de Diseños</button>
+                <button type="button" class="btn btn-lg btn-outline-danger" id="clearBtn"><i class="bi bi-trash"></i> Limpiar Todo</button>
+            </div>
+            <div id="resultsSection"></div>
+        </div>
+        <!-- Modal Editor de Diseño -->
+        <div class="modal fade" id="layoutEditorModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editor de Diseños de Registro</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body" id="layoutEditorContent"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="saveLayoutBtn">Guardar Cambios</button>
+                        <button type="button" class="btn btn-outline-secondary" id="resetLayoutBtn">Restaurar Predeterminado</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Aquí iría el JS mejorado, puedes reutilizar tu lógica y modularizarla -->
+    <script src="visor-iva.js"></script>
+</body>
+</html>
