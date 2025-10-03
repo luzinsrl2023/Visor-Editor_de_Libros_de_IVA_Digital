@@ -207,6 +207,9 @@
                 <button type="button" class="btn btn-lg btn-outline-secondary" id="layoutEditorBtn"><i class="bi bi-gear"></i> Editor de Diseños</button>
                 <button type="button" class="btn btn-lg btn-outline-danger" id="clearBtn"><i class="bi bi-trash"></i> Limpiar Todo</button>
                 <button type="button" class="btn btn-lg btn-success" id="previewBtn" title="Previsualizar primeros registros"><i class="bi bi-eye"></i> Previsualizar</button>
+                <button type="button" class="btn btn-lg btn-outline-light" id="undoBtn" title="Deshacer (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                <button type="button" class="btn btn-lg btn-outline-light" id="redoBtn" title="Rehacer (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
+                <button type="button" class="btn btn-lg btn-outline-primary" id="zipBtn" title="Descargar archivos corregidos en ZIP"><i class="bi bi-file-zip"></i> ZIP</button>
             </div>
             <div id="resultsSection"></div>
         </div>
@@ -232,7 +235,9 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <!-- Aquí iría el JS mejorado, puedes reutilizar tu lógica y modularizarla -->
     <script src="visor-iva.js"></script>
+    <script src="utils.js"></script>
 </body>
 </html>

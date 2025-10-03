@@ -12,7 +12,8 @@
 		filteredData: [],
 		selectedRows: new Set(),
 		currentSort: { field: null, direction: 'asc' },
-		customLayouts: JSON.parse(localStorage.getItem('customLayouts') || '{}')
+		customLayouts: JSON.parse(localStorage.getItem('customLayouts') || '{}'),
+		history: { past: [], future: [] }
 	};
 
 	const els = {
@@ -104,7 +105,6 @@
 	}
 
 	function validateDate(dateStr){ if(!/^\d{8}$/.test(dateStr)) return false; const year = parseInt(dateStr.substring(0,4)); const month = parseInt(dateStr.substring(4,6)); const day = parseInt(dateStr.substring(6,8)); const d = new Date(year, month-1, day); return d.getFullYear()===year && d.getMonth()===month-1 && d.getDate()===day; }
-
 	// -----------------------------
 	// UI: Tema / Compact / Drag
 	// -----------------------------
@@ -320,7 +320,26 @@
 	// -----------------------------
 	// Inicialización
 	// -----------------------------
-	function init(){ bindDragAndDrop(); if(els.compareBtn) els.compareBtn.addEventListener('click', analyzeFiles); if(els.clearBtn) els.clearBtn.addEventListener('click', clearAllUI); if(els.downloadSampleBtn) els.downloadSampleBtn.addEventListener('click', downloadSamples); if(els.previewBtn) els.previewBtn.addEventListener('click', previewFirstLines); if(els.themeSelect) els.themeSelect.addEventListener('change', applyTheme); if(els.compactToggle) els.compactToggle.addEventListener('change', applyCompactMode); if(els.saveLayoutBtn) els.saveLayoutBtn.addEventListener('click', saveCustomLayout); if(els.resetLayoutBtn) els.resetLayoutBtn.addEventListener('click', resetLayoutToDefault); document.getElementById('layoutEditorBtn')?.addEventListener('click', openLayoutEditor); document.getElementById('validateSingleBtn')?.addEventListener('click', validateSingleFile); renderRecent(); applyTheme(); applyCompactMode(); setupKeyboardShortcuts(); }
+	function init(){
+		bindDragAndDrop();
+		if(els.compareBtn) els.compareBtn.addEventListener('click', analyzeFiles);
+		if(els.clearBtn) els.clearBtn.addEventListener('click', clearAllUI);
+		if(els.downloadSampleBtn) els.downloadSampleBtn.addEventListener('click', downloadSamples);
+		if(els.previewBtn) els.previewBtn.addEventListener('click', previewFirstLines);
+		if(els.themeSelect) els.themeSelect.addEventListener('change', applyTheme);
+		if(els.compactToggle) els.compactToggle.addEventListener('change', applyCompactMode);
+		if(els.saveLayoutBtn) els.saveLayoutBtn.addEventListener('click', saveCustomLayout);
+		if(els.resetLayoutBtn) els.resetLayoutBtn.addEventListener('click', resetLayoutToDefault);
+		document.getElementById('layoutEditorBtn')?.addEventListener('click', openLayoutEditor);
+		document.getElementById('validateSingleBtn')?.addEventListener('click', validateSingleFile);
+		document.getElementById('zipBtn')?.addEventListener('click', zipCorrectedFiles);
+		setupHistoryBindings();
+		renderRecent();
+		applyTheme();
+		applyCompactMode();
+		setupKeyboardShortcuts();
+		tryRecoverAutosave();
+	}
 
 	function clearAllUI(){ state.cbteFile=null; state.alicuotasFile=null; state.dataWithErrors=[]; state.cbteRawData=[]; state.filteredData=[]; state.selectedRows.clear(); els.cbteStatus.textContent='Comprobantes: No cargado'; els.cbteStatus.classList.remove('text-success'); els.cbteStatus.classList.add('text-danger'); els.alicuotasStatus.textContent='Alícuotas: No cargado'; els.alicuotasStatus.classList.remove('text-success'); els.alicuotasStatus.classList.add('text-danger'); els.resultsSection.innerHTML=''; els.fileInput.value=''; showToast('Estado limpio', 'success'); }
 
