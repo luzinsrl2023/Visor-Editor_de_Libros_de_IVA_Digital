@@ -275,11 +275,56 @@
 	}
 
 	function setupTableEventListeners(){
-		document.querySelectorAll('td[contenteditable="true"]').forEach(cell=> cell.addEventListener('blur', function(){ const originalIndex = parseInt(this.closest('tr').dataset.originalIndex); const field = this.dataset.field; let value = this.textContent.trim(); const record = state.dataWithErrors.find(d=> d.originalIndex === originalIndex); if(!record) return; if(field === 'montoTotal'){ const v = parseFloat(value); if(isNaN(v)){ this.classList.add('text-danger'); showToast('Monto inválido', 'error'); return; } value = v; } if(field === 'nroIDCliente' || field === 'cuitProveedor'){ if(value && value.length>=11 && !validateCuit(value)){ this.classList.add('text-danger'); showToast('CUIT inválido', 'error'); return; } } if(field === 'fecha'){ if(value && !validateDate(value)){ this.classList.add('text-danger'); showToast('Fecha inválida (AAAAMMDD)', 'error'); return; } } // aplicar
-			this.classList.remove('text-danger');
-			record[field] = value;
-			pushHistory();
-		}));
+		// blur: validate and show inline errors/tooltips
+		document.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+			// add title for tooltip use
+			cell.setAttribute('data-bs-toggle', 'tooltip');
+			cell.setAttribute('data-bs-placement', 'top');
+			cell.addEventListener('blur', function(){
+				const originalIndex = parseInt(this.closest('tr').dataset.originalIndex);
+				const field = this.dataset.field;
+				let value = this.textContent.trim();
+				const record = state.dataWithErrors.find(d=> d.originalIndex === originalIndex);
+				if(!record) return;
+
+				// clear previous inline error
+				const prevErr = this.querySelector('.cell-error-msg');
+				if(prevErr) prevErr.remove();
+
+				let invalidMsg = null;
+				if(field === 'montoTotal'){
+					const v = parseFloat(value);
+					if(isNaN(v)) invalidMsg = 'Monto inválido'; else value = v;
+				}
+				if(field === 'nroIDCliente' || field === 'cuitProveedor'){
+					if(value && value.length>=11 && !validateCuit(value)) invalidMsg = 'CUIT inválido';
+				}
+				if(field === 'fecha'){
+					if(value && !validateDate(value)) invalidMsg = 'Fecha inválida (AAAAMMDD)';
+				}
+
+				if(invalidMsg){
+					this.classList.add('text-danger');
+					// inline small message
+					const msg = document.createElement('div');
+					msg.className = 'cell-error-msg text-danger small mt-1';
+					msg.textContent = invalidMsg;
+					this.appendChild(msg);
+					// tooltip
+					try{ const t = bootstrap.Tooltip.getInstance(this) || new bootstrap.Tooltip(this); t.dispose(); this.setAttribute('title', invalidMsg); new bootstrap.Tooltip(this).show(); }catch(e){}
+					showToast(invalidMsg, 'error');
+					return;
+				}
+
+				// valid
+				this.classList.remove('text-danger');
+				record[field] = value;
+				pushHistory();
+			});
+			// show tooltip on hover if title present
+			cell.addEventListener('mouseenter', function(){ try{ const tt = bootstrap.Tooltip.getInstance(this) || new bootstrap.Tooltip(this); }catch(e){} });
+		});
+
 		document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', handleRowSelection));
 		document.querySelectorAll('.sortable').forEach(h=> h.addEventListener('click', ()=> sortTable(h.dataset.field)));
 	}
