@@ -108,8 +108,31 @@
 	// -----------------------------
 	// UI: Tema / Compact / Drag
 	// -----------------------------
-	function applyTheme(){ const val = els.themeSelect?.value || 'dark'; document.body.classList.toggle('light', val==='light'); document.documentElement.classList.toggle('light', val==='light'); }
-	function applyCompactMode(){ document.body.classList.toggle('compact', els.compactToggle.checked); }
+	function applyTheme(){
+		const sel = els.themeSelect;
+		if(!sel) return;
+		const val = sel.value || 'dark';
+		// persistir elección
+		try{ localStorage.setItem('themeChoice', val); }catch(e){}
+
+		if(val === 'system'){
+			const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+			document.documentElement.classList.toggle('light', prefersLight);
+			document.body.classList.toggle('light', prefersLight);
+		} else if(val === 'light'){
+			document.documentElement.classList.add('light');
+			document.body.classList.add('light');
+		} else {
+			document.documentElement.classList.remove('light');
+			document.body.classList.remove('light');
+		}
+	}
+	function applyCompactMode(){
+		const el = els.compactToggle;
+		if(!el) return;
+		document.body.classList.toggle('compact', el.checked);
+		try{ localStorage.setItem('compactMode', el.checked ? '1' : '0'); }catch(e){}
+	}
 	function bindDragAndDrop(){ ['dragenter','dragover','dragleave','drop'].forEach(ev=> els.dropArea.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); })); els.dropArea.addEventListener('click', ()=> els.fileInput.click()); els.dropArea.addEventListener('drop', e=> onFileList(e.dataTransfer.files)); els.fileInput.addEventListener('change', e=> onFileList(e.target.files)); }
 
 	function onFileList(files){
@@ -333,10 +356,33 @@
 		document.getElementById('layoutEditorBtn')?.addEventListener('click', openLayoutEditor);
 		document.getElementById('validateSingleBtn')?.addEventListener('click', validateSingleFile);
 		document.getElementById('zipBtn')?.addEventListener('click', zipCorrectedFiles);
+		// fab theme quick toggle
+		document.getElementById('fabTheme')?.addEventListener('click', ()=>{
+			const sel = els.themeSelect;
+			if(!sel) return;
+			if(sel.value === 'light') sel.value = 'dark';
+			else if(sel.value === 'dark') sel.value = 'system';
+			else sel.value = 'light';
+			applyTheme();
+		});
+
 		setupHistoryBindings();
 		renderRecent();
+
+		// apply saved theme if any
+		try{
+			const saved = localStorage.getItem('themeChoice');
+			if(saved && els.themeSelect) els.themeSelect.value = saved;
+		}catch(e){}
 		applyTheme();
+
+		// apply compact saved
+		try{
+			const cm = localStorage.getItem('compactMode');
+			if(cm !== null && els.compactToggle) els.compactToggle.checked = cm === '1';
+		}catch(e){}
 		applyCompactMode();
+
 		setupKeyboardShortcuts();
 		tryRecoverAutosave();
 	}
